@@ -1,0 +1,6 @@
+@import "~bootstrap/scss/bootstrap";
+
+* { color: #444; }
+tr.separator { display: none; }
+.table th, .table td { border-top: 0; }
+td > i { color: #666; }
