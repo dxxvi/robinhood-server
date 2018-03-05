@@ -32,6 +32,21 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
     private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
     private val random = new Random
 
+    implicit object AnyJsonFormat extends JsonFormat[Any] {
+        override def write(obj: Any): JsValue = obj match {
+            case n: Int => JsNumber(n)
+            case d: Double => JsNumber(d)
+            case None => JsNull
+            case s: String => JsString(s)
+            case b: Boolean if b => JsTrue
+            case b: Boolean if !b => JsFalse
+            case m: Map[String, Any] => m.toJson
+        }
+
+        override def read(json: JsValue): Any =
+            deserializationError("No need to convert a string to an object of type Any")
+    }
+
     def main(args: Array[String]) {
         implicit val system: ActorSystem = ActorSystem("R")
         implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -99,11 +114,7 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
                     }
                 }
             } ~
-            path("positions"/) {
-                get {
-                    complete(createFakePositions)
-                }
-            } ~
+            path("positions"/) { get { complete(createFakePositions) } } ~
             path("portfolios"/) { get { complete(createFakePortfolios) } }
         }
 /*
@@ -215,6 +226,98 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
     private def createFakePositions: Map[String, Any] =
         Map(
             "previous" -> None,
-            "next" -> "http://localhost ..."
+            "next" -> "http://localhost ...",
+            "results" -> Array(
+                Map(
+                    "account" -> "https://api.robinhood.com/accounts/5RY82436/",
+                    "average_buy_price" -> "12.3047",
+                    "created_at" -> "2017-02-16T20:59:19.153162Z",
+                    "instrument" -> "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+                    "intraday_average_buy_price" -> "0.0000",
+                    "intraday_quantity" -> "0.0000",
+                    "pending_average_buy_price" -> "12.3047",
+                    "quantity" -> "5.0000",
+                    "shares_held_for_buys" -> "0.0000",
+                    "shares_held_for_options_collateral" -> "0.0000",
+                    "shares_held_for_options_events" -> "0.0000",
+                    "shares_held_for_sells" -> "0.0000",
+                    "shares_held_for_stock_grants" -> "0.0000",
+                    "shares_pending_from_options_events" -> "0.0000",
+                    "updated_at" -> "2018-03-02T23:01:10.668990Z",
+                    "url" -> "https://api.robinhood.com/positions/5RY82436/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/"
+                ),
+                Map(
+                    "account" -> "https://api.robinhood.com/accounts/5RY82436/",
+                    "average_buy_price" -> "5.3068",
+                    "created_at" -> "2017-07-14T13:49:38.466896Z",
+                    "instrument" -> "https://api.robinhood.com/instruments/3ad11874-934e-4b7f-8686-c7c9115b1a0b/",
+                    "intraday_average_buy_price" -> "0.0000",
+                    "intraday_quantity" -> "0.0000",
+                    "pending_average_buy_price" -> "5.3068",
+                    "quantity" -> "49.0000",
+                    "shares_held_for_buys" -> "0.0000",
+                    "shares_held_for_options_collateral" -> "0.0000",
+                    "shares_held_for_options_events" -> "0.0000",
+                    "shares_held_for_sells" -> "0.0000",
+                    "shares_held_for_stock_grants" -> "0.0000",
+                    "shares_pending_from_options_events" -> "0.0000",
+                    "updated_at" -> "2018-03-02T23:01:10.195526Z",
+                    "url" -> "https://api.robinhood.com/positions/5RY82436/3ad11874-934e-4b7f-8686-c7c9115b1a0b/"
+                ),
+                Map(
+                    "account" -> "https://api.robinhood.com/accounts/5RY82436/",
+                    "average_buy_price" -> "1.8600",
+                    "created_at" -> "2017-02-27T17:34:57.218276Z",
+                    "instrument" -> "https://api.robinhood.com/instruments/ef99a2c4-adb2-4163-a2df-2d5722cc75b7/",
+                    "intraday_average_buy_price" -> "0.0000",
+                    "intraday_quantity" -> "0.0000",
+                    "pending_average_buy_price" -> "1.8600",
+                    "quantity" -> "5.0000",
+                    "shares_held_for_buys" -> "0.0000",
+                    "shares_held_for_options_collateral" -> "0.0000",
+                    "shares_held_for_options_events" -> "0.0000",
+                    "shares_held_for_sells" -> "0.0000",
+                    "shares_held_for_stock_grants" -> "0.0000",
+                    "shares_pending_from_options_events" -> "0.0000",
+                    "updated_at" -> "2018-03-02T23:01:24.483839Z",
+                    "url" -> "https://api.robinhood.com/positions/5RY82436/ef99a2c4-adb2-4163-a2df-2d5722cc75b7/"
+                ),
+                Map(
+                    "account" -> "https://api.robinhood.com/accounts/5RY82436/",
+                    "average_buy_price" -> "12.2307",
+                    "created_at" -> "2017-06-26T13:07:12.338444Z",
+                    "instrument" -> "https://api.robinhood.com/instruments/62823dfa-199d-4b1d-9842-b34ce40485bd/",
+                    "intraday_average_buy_price" -> "0.0000",
+                    "intraday_quantity" -> "0.0000",
+                    "pending_average_buy_price" -> "12.2307",
+                    "quantity" -> "15.0000",
+                    "shares_held_for_buys" -> "0.0000",
+                    "shares_held_for_options_collateral" -> "0.0000",
+                    "shares_held_for_options_events" -> "0.0000",
+                    "shares_held_for_sells" -> "0.0000",
+                    "shares_held_for_stock_grants" -> "0.0000",
+                    "shares_pending_from_options_events" -> "0.0000",
+                    "updated_at" -> "2018-03-02T23:01:10.097292Z",
+                    "url" -> "https://api.robinhood.com/positions/5RY82436/62823dfa-199d-4b1d-9842-b34ce40485bd/"
+                ),
+                Map(
+                    "account" -> "https://api.robinhood.com/accounts/5RY82436/",
+                    "average_buy_price" -> "20.3813",
+                    "created_at" -> "2017-11-13T14:19:26.470656Z",
+                    "instrument" -> "https://api.robinhood.com/instruments/8e08c691-869f-482c-8bed-39d026215a85/",
+                    "intraday_average_buy_price" -> "0.0000",
+                    "intraday_quantity" -> "0.0000",
+                    "pending_average_buy_price" -> "20.3813",
+                    "quantity" -> "422.0000",
+                    "shares_held_for_buys" -> "0.0000",
+                    "shares_held_for_options_collateral" -> "0.0000",
+                    "shares_held_for_options_events" -> "0.0000",
+                    "shares_held_for_sells" -> "0.0000",
+                    "shares_held_for_stock_grants" -> "0.0000",
+                    "shares_pending_from_options_events" -> "0.0000",
+                    "updated_at" -> "2018-03-02T23:02:04.111957Z",
+                    "url" -> "https://api.robinhood.com/positions/5RY82436/8e08c691-869f-482c-8bed-39d026215a85/"
+                )
+            )
         )
 }
