@@ -28,24 +28,11 @@ import scala.annotation.tailrec
 import scala.sys.SystemProperties
 import scala.util.Random
 
+import FakePosition._
+
 object Main extends SprayJsonSupport with DefaultJsonProtocol {
     private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
     private val random = new Random
-
-    implicit object AnyJsonFormat extends JsonFormat[Any] {
-        override def write(obj: Any): JsValue = obj match {
-            case n: Int => JsNumber(n)
-            case d: Double => JsNumber(d)
-            case None => JsNull
-            case s: String => JsString(s)
-            case b: Boolean if b => JsTrue
-            case b: Boolean if !b => JsFalse
-            case m: Map[String, Any] => m.toJson
-        }
-
-        override def read(json: JsValue): Any =
-            deserializationError("No need to convert a string to an object of type Any")
-    }
 
     def main(args: Array[String]) {
         implicit val system: ActorSystem = ActorSystem("R")
@@ -114,7 +101,7 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
                     }
                 }
             } ~
-            path("positions"/) { get { complete(createFakePositions) } } ~
+            path("positions"/) { get { complete(createFakePosition) } } ~
             path("portfolios"/) { get { complete(createFakePortfolios) } }
         }
 /*
@@ -223,11 +210,11 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
             "withdrawable_amount" -> "18278.6200"
         )))
 
-    private def createFakePositions: Map[String, Any] =
-        Map(
-            "previous" -> None,
-            "next" -> "http://localhost ...",
-            "results" -> Array(
+    private def createFakePosition: FakePosition =
+        FakePosition(
+            None,
+            Some("http://localhost ..."),
+            Array(
                 Map(
                     "account" -> "https://api.robinhood.com/accounts/5RY82436/",
                     "average_buy_price" -> "12.3047",
