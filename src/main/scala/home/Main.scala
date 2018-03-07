@@ -31,8 +31,8 @@ import scala.util.Random
 import FakePosition._
 
 object Main extends SprayJsonSupport with DefaultJsonProtocol {
-//    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
-    private val GITHUB = "http://localhost:1904/"
+    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
+//    private val GITHUB = "http://localhost:1904/"
     private val random = new Random
 
     def main(args: Array[String]) {
@@ -40,6 +40,18 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
         implicit val materializer: ActorMaterializer = ActorMaterializer()
         // needed for the future flatMap/onComplete in the end
         implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+
+        implicit object AnyJsonFormat extends RootJsonFormat[Any] {
+            override def write(obj: Any): JsValue = obj match {
+                case s: String => JsString(s)
+                case i: Int => JsNumber(i)
+                case d: Double => JsNumber(d)
+                case b: Boolean => if (b) JsTrue else JsFalse
+                case None => JsNull
+            }
+
+            override def read(json: JsValue): Any = deserializationError("No need to convert a JsValue to Any")
+        }
 
         val systemProperties = new SystemProperties
         val proxyHost: Option[String] = systemProperties.get("https.proxyHost")
@@ -84,14 +96,16 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
                     parameter('symbols) { symbols => {
                         val time = LocalTime.now.minusSeconds(timeOffset)
                         println(s"Get data at $time")
-                        symbols.split(",")
+                        complete(
+                            symbols.split(",")
                                 .map(symbol => (symbol, symbol2Quotes.get(symbol)))
                                 .collect {
-                                    case (symbol, Some(quotes)) => (symbol, getQuote(quotes, time))
+                                    case (symbol, Some(quotes)) => buildQuoteMap(symbol, getQuote(quotes, time))
                                 }
-                                .foreach(println)
-
-                        complete(Map("your symbols are" -> symbols))
+                                .collect {
+                                    case Some(map) => map
+                                }
+                        )
                     }}
                 }
             } ~
@@ -308,4 +322,18 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
                 )
             )
         )
+
+    private def buildQuoteMap(symbol: String, quote: Option[Quote]): Option[Map[String, Any]] =
+        quote.map(q => {
+            Map(
+                "adjusted_previous_close" -> f"${q.q}%.4f",
+                "instrument" -> (symbol match {
+                    case "AMD" => "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/"
+                    case "HTZ" => "https://api.robinhood.com/instruments/8e08c691-869f-482c-8bed-39d026215a85/"
+                    case "ON"  => "https://api.robinhood.com/instruments/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/"
+                }),
+                "symbol" -> symbol,
+                "trading_halted" -> false
+            )
+        })
 }
