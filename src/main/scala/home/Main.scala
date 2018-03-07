@@ -31,7 +31,8 @@ import scala.util.Random
 import FakePosition._
 
 object Main extends SprayJsonSupport with DefaultJsonProtocol {
-    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
+//    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
+    private val GITHUB = "http://localhost:1904/"
     private val random = new Random
 
     def main(args: Array[String]) {
