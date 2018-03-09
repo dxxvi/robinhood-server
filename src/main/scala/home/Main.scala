@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 import scala.io.StdIn
 import java.io._
 import java.net.InetSocketAddress
-import java.time.LocalTime
+import java.time.{LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
@@ -27,12 +27,11 @@ import spray.json._
 import scala.annotation.tailrec
 import scala.sys.SystemProperties
 import scala.util.Random
-
 import FakePosition._
 
 object Main extends SprayJsonSupport with DefaultJsonProtocol {
-    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
-//    private val GITHUB = "http://localhost:1904/"
+//    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
+    private val GITHUB = "http://localhost:1904/"
     private val random = new Random
 
     def main(args: Array[String]) {
@@ -327,13 +326,24 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
         quote.map(q => {
             Map(
                 "adjusted_previous_close" -> f"${q.q}%.4f",
+                "ask_price" -> f"${q.q}%.4f",
+                "ask_size" -> 1900,
+                "bid_price" -> f"${q.q}%.4f",
+                "bid_size" -> 400,
+                "has_traded" -> true,
                 "instrument" -> (symbol match {
                     case "AMD" => "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/"
                     case "HTZ" => "https://api.robinhood.com/instruments/8e08c691-869f-482c-8bed-39d026215a85/"
                     case "ON"  => "https://api.robinhood.com/instruments/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/"
                 }),
+                "last_extended_hours_trade_price" -> f"${q.q}%.4f",
+                "last_trade_price" -> f"${q.q}%.4f",
+                "last_trade_price_source" -> "consolidated",
+                "previous_close" -> f"${q.q}%.4f",
+                "previous_close_date" -> q.ldt.toLocalDate.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE),
                 "symbol" -> symbol,
-                "trading_halted" -> false
+                "trading_halted" -> false,
+                "updated_at" -> (q.ldt.plusHours(5).format(DateTimeFormatter.ISO_DATE_TIME) + "Z")
             )
         })
 }
