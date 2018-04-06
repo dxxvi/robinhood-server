@@ -1,6 +1,6 @@
-package java9;
+package java10;
 
-public class Java9Features {
+public class Java10Features {
     public void feature1() {
         System.out.println("Hello World!");
     }
