@@ -10,7 +10,7 @@ import org.scalatest.FunSuite
 import spray.json.RootJsonFormat
 
 import scala.annotation.tailrec
-import scala.io.Source
+import scala.io.{Source, StdIn}
 
 class SafariBooksOnline extends FunSuite {
     test("process files") {
@@ -51,7 +51,7 @@ class SafariBooksOnline extends FunSuite {
             val outputSettings = new Document.OutputSettings().indentAmount(2).prettyPrint(true).charset("UTF-8")
             // beautify
             val document = Jsoup.parse(s).outputSettings(outputSettings)
-//            forPackt(document)
+            forPackt(document)
 
             val regex = """^([ ]+)<div class="pre" id="([a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12})"></div>[ ]*$""".r
             // put the <pre's back
@@ -64,6 +64,7 @@ class SafariBooksOnline extends FunSuite {
         })
     }
 
+    // fix the Table of Contents
     private def forPackt(document: Document): Unit = {
         val regex = """([a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12})\.html""".r
         val toc = toOption[Element](document.getElementById("toc"))
@@ -98,6 +99,7 @@ class SafariBooksOnline extends FunSuite {
     }
 
     private def toOption[T](x: Any): Option[T] = if (x == null) None else Some(x.asInstanceOf[T])
+
 }
 
 case class Payload(text: String)
