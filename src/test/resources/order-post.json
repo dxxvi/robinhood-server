@@ -1,0 +1,11 @@
+// http -v POST :8282/orders/ Accept:"application/json" < order-post.json
+{
+  "instrument": "https://api.robinhood.com/instruments/amd8fa2c-1e8d-4cb9-b354-1f0b91a4193e/",
+  "price": 10.37,
+  "quantity": 1,
+  "side": "buy",
+  "symbol": "AMD",
+  "time_in_force": "gfd",
+  "trigger": "immediate",
+  "type": "limit"
+}

@@ -9,7 +9,7 @@ object Quote extends DefaultJsonProtocol {
         override def write(obj: Quote): JsValue = serializationError("No need to serialize Quote")
 
         override def read(json: JsValue): Quote = {
-            val fields = json.asJsObject("check your json string").fields
+            val fields = json.asJsObject("check your quote json string").fields
             val year: Int = fields.get("year").collect({ case JsNumber(y) => y.toInt }).head
             val month: Int = fields.get("month").collect({ case JsNumber(y) => y.toInt }).head
             val date: Int = fields.get("date").collect({ case JsNumber(y) => y.toInt }).head

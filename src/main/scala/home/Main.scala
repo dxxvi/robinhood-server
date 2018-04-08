@@ -14,9 +14,10 @@ import scala.concurrent.duration._
 import scala.io.StdIn
 import java.io._
 import java.net.InetSocketAddress
-import java.time.{LocalDate, LocalTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 import akka.http.scaladsl.{ClientTransport, Http}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -29,9 +30,11 @@ import scala.sys.SystemProperties
 import scala.util.Random
 import FakePosition._
 
+import scala.collection.concurrent.TrieMap
+
 object Main extends SprayJsonSupport with DefaultJsonProtocol {
-//    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master/"
-    private val GITHUB = "http://localhost:1904/"
+//    private val GITHUB = "https://raw.githubusercontent.com/dxxvi/stock-quotes/master"
+    private val GITHUB = "http://localhost:1904/data"
     private val random = new Random
 
     def main(args: Array[String]) {
@@ -47,6 +50,8 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
                 case d: Double => JsNumber(d)
                 case b: Boolean => if (b) JsTrue else JsFalse
                 case None => JsNull
+                case os: Some[String] => JsString(os.get)
+                case v: Vector[RobinhoodOrder] => JsArray(v.map(_.toJson))
             }
 
             override def read(json: JsValue): Any = deserializationError("No need to convert a JsValue to Any")
@@ -76,6 +81,8 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
 
         val currentDirectory = new File(".").getAbsolutePath
 
+        val orders = new TrieMap[String, RobinhoodOrder]()
+
         val route: Route = {
             path("api-token-auth") {
                 post {
@@ -93,7 +100,7 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
             path("quotes"/) {
                 get {
                     parameter('symbols) { symbols => {
-                        val time = LocalTime.now.minusSeconds(timeOffset)
+                        val time = LocalTime.now minusSeconds timeOffset
                         println(s"Get data at $time")
                         complete(
                             symbols.split(",")
@@ -110,9 +117,44 @@ object Main extends SprayJsonSupport with DefaultJsonProtocol {
             } ~
             path("orders"/) {
                 get {
-                    parameters(Symbol("updated_at[gte]").?) { ua =>
-                        complete(s"updated_at[gte] is $ua")
+                    parameters(Symbol("updated_at[gte]").?) {
+                        case None =>
+                            val map: Map[String, Any] = Map(
+                                "next" -> None,
+                                "previous" -> None,
+                                "results" -> orders.values.toVector
+                            )
+                            complete(map)
+                        case Some(t) =>
+                            val ua = LocalDateTime.parse(t.replaceAll("\\.\\d{0,6}Z$", "Z"), DateTimeFormatter.ISO_INSTANT)
+                            val map: Map[String, Any] = Map(
+                                "next" -> None,
+                                "previous" -> None,
+                                "results" -> orders.values.filter(_.createdAt.isAfter(ua)).toVector
+                            )
+                            complete(map)
                     }
+                } ~
+                post {
+                    entity(as[Order]) { order => {
+                        val id = UUID.randomUUID.toString
+                        val ro = RobinhoodOrder(
+                            LocalDateTime.now.minusSeconds(timeOffset - 1),
+                            order.timeInForce,
+                            Some("https://api.robinhood.com/orders/$id/cancel"),
+                            id,
+                            order.instrumentUrl,
+                            order.trigger,
+                            order.orderType,
+                            order.price,
+                            LocalDateTime.now minusSeconds timeOffset,
+                            order.side,
+                            "confirmed",
+                            order.quantity
+                        )
+                        orders += (id -> ro.copy(state = "filled"))
+                        complete(ro)
+                    }}
                 }
             } ~
             path("positions"/) { get { complete(createFakePosition) } } ~
